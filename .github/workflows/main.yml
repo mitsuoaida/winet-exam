@@ -1,0 +1,53 @@
+name: Register Multiple Related Tickets to Redmine
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  register-related-tickets:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get commit messages
+        id: get_ticket_ids
+        run: |
+          # 最新のコミット1件だけ対象（必要なら --max-count を調整）
+          COMMITS=$(git log -1 --pretty=format:"%s")
+          echo "Commit message: $COMMITS"
+
+          # refs #12345 を全部抽出
+          TICKET_IDS=$(echo "$COMMITS" | grep -oE "refs #[0-9]+" | awk '{print $2}' | sort -u)
+          
+          if [ -z "$TICKET_IDS" ]; then
+            echo "No ticket IDs found."
+            echo "ticket_ids=" >> "$GITHUB_OUTPUT"
+          else
+            echo "Found ticket IDs: $TICKET_IDS"
+            echo "ticket_ids=$TICKET_IDS" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Register tickets via Redmine API
+        if: steps.get_ticket_ids.outputs.ticket_ids != ''
+        env:
+          REDMINE_API_KEY: ${{ secrets.REDMINE_API_KEY }}
+        run: |
+          BASE_TICKET_ID="172550"
+
+          for TICKET_ID in ${{ steps.get_ticket_ids.outputs.ticket_ids }}; do
+            echo "Registering ticket $TICKET_ID as related to $BASE_TICKET_ID"
+
+            curl -X POST "https://works.freemind.co.jp/redmine/issues/$BASE_TICKET_ID/relations.json" \
+              -H "X-Redmine-API-Key: $REDMINE_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d '{
+                "relation": {
+                  "issue_to_id": '"$TICKET_ID"',
+                  "relation_type": "relates"
+                }
+              }'
+          done
