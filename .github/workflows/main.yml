@@ -21,7 +21,7 @@ jobs:
           echo "Commit message: $COMMITS"
 
           # refs #12345 を全部抽出
-          TICKET_IDS=$(echo "$COMMITS" | grep -oE "refs #[0-9]+" | awk '{print $2}' | sort -u)
+          TICKET_IDS=$(git log -1 --pretty=%B | grep -oE '#[0-9]+' | sed 's/#//g')
           
           if [ -z "$TICKET_IDS" ]; then
             echo "No ticket IDs found."
