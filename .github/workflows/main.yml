@@ -41,7 +41,7 @@ jobs:
           for TICKET_ID in ${{ steps.get_ticket_ids.outputs.ticket_ids }}; do
             echo "Registering ticket $TICKET_ID as related to $BASE_TICKET_ID"
 
-            curl -X POST "https://works.freemind.co.jp/redmine/issues/$BASE_TICKET_ID/relations.json" \
+            curl -X POST "https://freemind:koo18349@works.freemind.co.jp/redmine/issues/$BASE_TICKET_ID/relations.json" \
               -H "X-Redmine-API-Key: $REDMINE_API_KEY" \
               -H "Content-Type: application/json" \
               -d '{
